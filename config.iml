@@ -1,0 +1,21 @@
+[server]
+ip=192.168.1.138
+port=22
+server_port=8086
+#server_port=5000
+
+
+[ftpServer]
+ip=192.168.1.138
+port=22
+server_port=2375
+username=root
+password=love0310
+
+[jenkins]
+url=http://192.168.1.138:8088/
+username = szy
+password = dt123
+credentialsId = a994b0c9-753d-4ac1-a258-aa50b73ce20f
+
+

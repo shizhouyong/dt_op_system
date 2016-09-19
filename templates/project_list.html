@@ -1,0 +1,278 @@
+{% extends "base_layout.html" %}
+
+{% block css %}
+    <link href="{{ url_for('static', filename='basstyle.css') }}" rel="stylesheet" type="text/css"/>
+{% endblock %}
+
+{% block body %}
+  <!-- Nav tabs -->
+  <ul class="nav nav-tabs" role="tablist">
+      <li role="presentation" class="active"><a href="#project_list" aria-controls="project_list" role="tab" data-toggle="tab">模块列表</a></li>
+      <li role="presentation"><a href="#project_manage" aria-controls="project_manage" role="tab" data-toggle="tab">新建模块</a></li>
+  </ul>
+
+  <!-- Tab panes -->
+  <div class="tab-content">
+    <div role="tabpanel" class="tab-pane active" id="project_list">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box box-success">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">模块列表</h3>
+                    </div><!-- /.box-header -->
+                    <div class="box-body">
+                        <table class="table table-bordered" id="pro_info">
+                            <tr>
+                                <th>模块名</th>
+                                <th>gitlab地址</th>
+                                <th>创建时间</th>
+                                {% if session.get('username') == 'admin' %}
+                                <th>操作</th>
+                                {% endif %}
+                            </tr>
+                            {% for project in projects %}
+                            <tr class="pro_info_tr">
+                                <td>
+                                    <!-- Button trigger modal -->
+                                    <a class="btn btn-link btn-a" data-toggle="modal" data-target="#myModal">{{ project.name }}</a>
+                                </td>
+                                <td>{{ project.gitlab_url }}</td>
+                                <td>{{ project.time }}</td>
+                                <td>
+                                    {% if session.get('username') == 'admin' %}
+                                    <a href="/project/delete_project/{{ project.pid }}">删除</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div><!-- /.box-body -->
+                </div><!-- /.box -->
+            </div>
+        </div>
+    </div>
+    <div role="tabpanel" class="tab-pane" id="project_manage">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">新建模块</h3>
+                    </div>
+                    <div class="box-body">
+                        <form role="form" action="{{ url_for('project.new_project') }}" method="post">
+                            <div class="form-group">
+                                <label>模块名</label>
+                                <input type="text" class="form-control" name="project_name" placeholder="输入服务名">
+                            </div>
+                            <div class="form-group">
+                                <label>gitlab地址</label>
+                                <input type="text" class="form-control" name="gitlab_url" placeholder="输入gitlab地址">
+                            </div>
+                            <div class="form-group">
+                                <label>分支</label>
+                                <input type="text" class="form-control" name="branch" placeholder="输入分支">
+                            </div>
+                            <div class="form-group">
+                                <label>构建前脚本</label>
+                                <textarea class="form-control" rows="3" name="pre_shell" placeholder="输入构建前脚本"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>构建后脚本</label>
+                                <textarea class="form-control" rows="3" name="pos_shell" placeholder="输入构建后脚本"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>描述</label>
+                                <textarea class="form-control" rows="3" name="description" placeholder="描述"></textarea>
+                            </div>
+                            <div class="box-footer">
+                                <button type="submit" class="btn btn-primary">新建</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <!-- Nav tabs -->
+          <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active"><a href="#project_config" aria-controls="project_config" role="tab" data-toggle="tab">配置</a></li>
+            <li role="presentation"><a href="#project_member" aria-controls="project_member" role="tab" data-toggle="tab">成员</a></li>
+          </ul>
+      </div>
+      <div class="modal-body">
+          <div class="tab-content">
+              <div role="tabpanel" class="tab-pane active" id="project_config">
+                  <div class="row">
+                    <div class="col-xs-12">
+                        <div class="box box-primary">
+                            <div class="box-header with-border">
+                                <h3 class="box-title">模块配置</h3>
+                            </div>
+                            <div class="box-body">
+                                <form role="form" action="{{ url_for('project.update_project') }}" method="post">
+                                    <input class="hidden_project_pid" type="hidden" name="hidden_project_pid"/>
+                                    <div class="form-group">
+                                        <label>模块名</label>
+                                        <input type="text" class="form-control" id="project_name" name="project_name" placeholder="输入模块名">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>gitlab地址</label>
+                                        <input type="text" class="form-control" id="gitlab_url" name="gitlab_url" placeholder="输入gitlab地址">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>分支</label>
+                                        <input type="text" class="form-control" id="branch" name="branch" placeholder="输入分支">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>构建前脚本</label>
+                                        <textarea class="form-control" rows="3" id="pre_shell" name="pre_shell" placeholder="输入构建前脚本"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>构建后脚本</label>
+                                        <textarea class="form-control" rows="3" id="pos_shell" name="pos_shell" placeholder="输入构建后脚本"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>描述</label>
+                                        <textarea class="form-control" rows="3" id="description" name="description" placeholder="描述"></textarea>
+                                    </div>
+                                    <div class="box-footer">
+                                        <button type="submit" class="btn btn-primary">保存</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="project_member">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="box box-success">
+                            <div class="box-header with-border">
+                                <h3 class="box-title">成员列表</h3>
+                            </div><!-- /.box-header -->
+                            <div class="box-body">
+                                <table id="member_table" class="table table-bordered">
+                                    <tr>
+                                        <th>姓名</th>
+                                        <th>角色</th>
+                                        <th>操作-删除</th>
+                                    </tr>
+                                </table>
+                            </div><!-- /.box-body -->
+                        </div><!-- /.box -->
+                    </div>
+
+                    <div class="col-xs-12">
+                        <div class="box box-primary">
+                            <div class="box-header with-border">
+                                <h3 class="box-title">添加成员</h3>
+                            </div>
+                            <div class="box-body">
+                                <form role="form" action="{{ url_for('project.add_member') }}" method="post">
+                                    <input class="hidden_project_pid" type="hidden" name="hidden_project_pid"/>
+                                    <div class="form-group">
+                                        <label>用户名</label>
+                                        <input type="text" id="member" name="member" class="selecttext form-control" autoComplete='off' placeholder="请选择用户" value="">
+                                        <div id="memberbox" class="userbox">
+                                            <ul>
+                                                {% for user in users %}
+                                                <li>{{ user.username }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>角色</label>
+                                        <select class="form-control" name="role">
+                                            <option>4 ordinary</option>
+                                            <option>3 manager</option>
+                                        </select>
+                                    </div>
+                                    <div class="box-footer">
+                                        <button type="submit" class="btn btn-primary">添加</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+
+<script src="{{ url_for('static', filename='basjs.js') }}"></script>
+<script>
+
+    $(document).ready(function(){
+        before = $("#member_table tbody").html();
+        $(".btn-a").on('click', project_info);
+        $("form:eq(1)").submit(project_add);
+
+        $(".userbox").css("top",$(".form-group").css("top")+$(".form-group").css("height"));
+        $(".userbox").css("left",$(".form-group").css("left"));
+        $(".userli").css("font-size",$(".selecttext").css("font-size"));
+        $(".userli").css("text-align","center");
+        bindText();
+        bindLi();
+    });
+
+    function project_info(){
+        if($("#project_name")!=this.text){
+            //alert(before);
+            {% for project in projects %}
+            if("{{ project.name }}" == this.text){
+                $("#project_name").val("{{ project.name }}");
+                $("#gitlab_url").val("{{ project.gitlab_url }}");
+                $("#branch").val("{{ project.branch }}");
+                $("#pre_shell").val("{{ project.pre_shell }}");
+                $("#pos_shell").val("{{ project.pos_shell }}");
+                $("#description").val("{{ project.description }}");
+                $(".hidden_project_pid").val("{{ project.pid }}");
+
+                $.get("/project/get_project_information/{{ project.pid }}",
+                  function(data){
+                    var obj = JSON.parse(data['result']);
+                    //alert(obj.result.length);
+                    append = "";
+                    if(obj.result.length!=0){
+                        var username = obj.result[0].username;
+                        for(var i=0;i<obj.result.length;i++){
+                            var username = obj.result[i].username;
+                            var role = obj.result[i].remark;
+                            var id = obj.result[i].id;
+                            append = append + "<tr>";
+                            append = append + "<td>" + username + "</td>";
+                            append = append + "<td>" + role + "</td>";
+                            append = append + "<td>";
+                            if(role != "manager"){
+                                append = append + '<a href="/project/delete_member/{{ project.pid }}/' +id+ '">删除</a>';
+                            }
+                            append = append + "</td></tr>";
+                        }
+                    }
+                    //alert(before+append);
+                    $("#member_table").html(before+append);
+                });
+            }
+            {% endfor %}
+        }
+    }
+
+</script>
+{% endblock %}

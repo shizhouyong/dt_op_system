@@ -1,0 +1,85 @@
+{% extends "base_layout.html" %}
+{% block body %}
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="callout callout-warning">
+                <h4>1.更新状态请手动刷新</h4>
+                <p>由于目前的简易系统比较弱鸡,从Jenkins回来的反馈不会让页面刷新,请手动F5/CMD+R</p>
+                <h4>2.同一个分支不要同时提交多个构建请求</h4>
+                <p>你需要等到最新的构建有了构建完毕的反馈后再进行新的构建请求(还是因为系统弱鸡)</p>
+            </div>
+        </div>
+        <div class="col-xs-12">
+            <div class="box box-primary">
+                <div class="box-header with-border">
+                    <h3 class="box-title">新建构建:{{ environment }}</h3>
+                </div>
+                <div class="box-body">
+                    <form role="form" action="{{ url_for('build.war_build') }}" method="post">
+                        <input type="hidden" name="branch" value="{{ environment }}">
+                        <div class="form-group">
+                            <label>构建说明</label>
+                            <textarea class="form-control" rows="3" placeholder="输入说明 ..." name="build_desc"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>发布服务器</label>
+                            <select class="form-control" name="tomcat">
+                                <option value="0" selected>不发布服务</option>
+                                {% for tomcat in tomcats %}
+                                    <option value="{{ tomcat.id }}">{{ tomcat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="box-footer">
+                            <button type="submit" class="btn btn-primary">开始构建</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12">
+            <div class="box box-success">
+                <div class="box-header with-border">
+                    <h3 class="box-title">{{ environment }}构建记录</h3>
+                </div><!-- /.box-header -->
+                <div class="box-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>#</th>
+                            <th>构建提交时间</th>
+                            <th>构建说明</th>
+                            <th>操作人</th>
+                            <th>状态</th>
+                            <th>war包名</th>
+                            <th>发布服务器</th>
+                        </tr>
+                        {% for build in builds %}
+                            <tr>
+                                <td>{{ build.id }}.</td>
+                                <td>{{ build.time }}</td>
+                                <td>{{ build.build_desc }}</td>
+                                <td>{{ build.operator }}</td>
+                                <td>{{ build.process }}</td>
+                                <td>{{ build.war_name }}</td>
+                                {% for tomcat in tomcats %}
+                                    {% if build.tomcat == tomcat.id %}
+                                        <td>{{ tomcat.name }}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div><!-- /.box-body -->
+                <div class="box-footer clearfix">
+                    <ul class="pagination pagination-sm no-margin pull-right">
+                        <li><a href="#">&laquo;</a></li>
+                        <li><a href="#">1</a></li>
+                        <li><a href="#">2</a></li>
+                        <li><a href="#">3</a></li>
+                        <li><a href="#">&raquo;</a></li>
+                    </ul>
+                </div>
+            </div><!-- /.box -->
+        </div>
+    </div>
+{% endblock %}

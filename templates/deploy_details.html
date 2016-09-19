@@ -1,0 +1,36 @@
+{% extends "base_layout.html" %}
+{% block body %}
+<div class="row">
+    <div class="col-xs-12">
+        <div class="box box-primary">
+            <div class="box-header with-border">
+                <h3 class="box-title">{{ deploy.id }}号部署请求详情</h3>
+            </div>
+            <div class="box-body">
+                <form role="form" action="#" method="post">
+                    <div class="form-group">
+                        <label>id</label>
+                        <input type="text" class="form-control" name="deploy_did" value="{{ deploy.id }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>发起人</label>
+                        <input type="text" class="form-control" name="submitter_name" placeholder="输入工程名" value="{{ deploy.submitter_name }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>审核人</label>
+                        <input type="text" class="form-control" name="reviewer_name" placeholder="输入jenkins工程" value="{{ deploy.reviewer_name }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>提交时间</label>
+                        <input type="text" class="form-control" name="time" placeholder="输入工程描述" value="{{ deploy.time }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>详情描述</label>
+                        <textarea class="form-control" rows="3" placeholder="输入说明 ..." name="description" readonly>{{ deploy.description }}</textarea>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

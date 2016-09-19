@@ -1,0 +1,91 @@
+{% extends "base_layout.html" %}
+{% block body %}
+
+<!-- Nav tabs -->
+<ul class="nav nav-tabs" role="tablist">
+    <li role="presentation" class="active"><a href="#cycle_list" aria-controls="cycle_list" role="tab" data-toggle="tab">迭代周期列表</a></li>
+    <li role="presentation"><a href="#cycle_new" aria-controls="cycle_new" role="tab" data-toggle="tab">创建迭代周期</a></li>
+</ul>
+
+<!-- Tab panes -->
+  <div class="tab-content">
+      <div role="tabpanel" class="tab-pane active" id="cycle_list">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box box-success">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">迭代周期列表</h3>
+                    </div><!-- /.box-header -->
+                    <div class="box-body">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>#</th>
+                                <th>开始时间</th>
+                                <th>结束时间</th>
+                                <th>状态</th>
+                                <th>描述</th>
+                                <th>操作-删除</th>
+                            </tr>
+                            {% for cycle in cycles %}
+                            <tr>
+                                <td>{{ cycle.id }}</td>
+                                <td>{{ cycle.start }}</td>
+                                <td>{{ cycle.end }}</td>
+                                <td>
+                                    {% if cycle.status == 1 %}
+                                        进行中
+                                    {% else %}
+                                        已结束
+                                    {% endif %}
+                                </td>
+                                <td>{{ cycle.description }}</td>
+                                <td>{% if session.get('username') == "admin" %}
+                                        {% if cycle.status == 0  %}
+                                            <a href="/delete_cycle/{{ cycle.id }}">删除</a>
+                                        {% else %}
+                                            <a href="/stop_cycle/{{ cycle.id }}">停止</a>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div><!-- /.box-body -->
+                </div><!-- /.box -->
+            </div>
+        </div>
+      </div>
+
+        <div role="tabpanel" class="tab-pane" id="cycle_new">
+            <div class="row">
+
+                <div class="col-xs-12">
+                    <div class="box box-primary">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">创建迭代周期</h3>
+                        </div>
+                        <div class="box-body">
+                            <form role="form" action="{{ url_for('system.new_cycle') }}" method="post" autocomplete="off">
+                                <div class="form-group">
+                                    <label>开始时间</label>
+                                    <input type="text" class="form-control" name="start" placeholder="输入开始时间，格式：年月日">
+                                </div>
+                                <div class="form-group">
+                                    <label>结束时间</label>
+                                    <input type="text" class="form-control" name="end" placeholder="输入结束时间，格式：年月日">
+                                </div>
+                                <div class="form-group">
+                                    <label>描述</label>
+                                    <textarea class="form-control" rows="3" name="description" placeholder="输入描述"></textarea>
+                                </div>
+                                <div class="box-footer">
+                                    <button type="submit" class="btn btn-primary">创建</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+  </div>
+{% endblock %}

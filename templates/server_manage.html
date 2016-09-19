@@ -1,0 +1,349 @@
+{% extends "base_layout.html" %}
+
+{% block css %}
+    <link href="{{ url_for('static', filename='basstyle.css') }}" rel="stylesheet" type="text/css"/>
+{% endblock %}
+
+{% block body %}
+
+<!-- Nav tabs -->
+<ul class="nav nav-tabs" role="tablist">
+    <li role="presentation" class="active"><a href="#server_list" aria-controls="server_list" role="tab" data-toggle="tab">服务器列表</a></li>
+    <li role="presentation"><a href="#server_new" aria-controls="server_new" role="tab" data-toggle="tab">添加服务器</a></li>
+    <li role="presentation"><a href="#server_environment" aria-controls="server_environment" role="tab" data-toggle="tab">添加服务运行环境</a></li>
+</ul>
+
+<!-- Tab panes -->
+  <div class="tab-content">
+    <div role="tabpanel" class="tab-pane active" id="server_list">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box box-success">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">服务器实例</h3>
+                    </div><!-- /.box-header -->
+                    <div class="box-body">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th style="width: 100px">实例id</th>
+                                <th style="width: 180px">实例名称</th>
+                                <th>公网IP</th>
+                                <th>内网IP</th>
+                                <th>环境</th>
+                                <th style="width: 150px">操作</th>
+                            </tr>
+                            {% for server in servers %}
+                            <tr>
+                                <td>{{ server.aliid }}</td>
+                                <td>
+                                    <!-- Button trigger modal -->
+                                    <a class="btn btn-link btn-a btn-server" data-toggle="modal" data-target="#server_modal">{{ server.name }}</a>
+                                </td>
+                                <td>{{ server.ip_outer }}</td>
+                                <td>{{ server.ip_inner }}</td>
+                                <td>{{ server.environment }}</td>
+                                <td><a href="/build/server_delete/{{ server.id }}">删除</a></td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div><!-- /.box-body -->
+                    <div class="box-footer clearfix">
+                        <ul class="pagination pagination-sm no-margin pull-right">
+                            <li><a href="#">&laquo;</a></li>
+                            <li><a href="#">1</a></li>
+                            <li><a href="#">2</a></li>
+                            <li><a href="#">3</a></li>
+                            <li><a href="#">&raquo;</a></li>
+                        </ul>
+                    </div>
+                </div><!-- /.box -->
+            </div>
+        </div>
+    </div>
+
+    <div role="tabpanel" class="tab-pane" id="server_new">
+        <div class="row">
+          <div class="col-xs-12">
+              <div class="box box-primary">
+                  <div class="box-header with-border">
+                      <h3 class="box-title">添加服务器</h3>
+                  </div>
+                  <div class="box-body">
+                      <form role="form" action="{{ url_for('build.server_new') }}" method="post">
+
+                          <div class="form-group">
+                              <label>实例名称</label>
+                              <input type="text" class="form-control" name="name">
+                          </div>
+                          <div class="form-group">
+                              <label>登陆用户名</label>
+                              <input type="text" class="form-control" name="username">
+                          </div>
+                          <div class="form-group">
+                              <label>登陆密码</label>
+                              <input type="text" class="form-control" name="password">
+                          </div>
+                          <div class="form-group">
+                              <div class="radio">
+                                  <label>
+                                      <input type="radio" name="server_type" value="ali" checked="">
+                                      阿里云服务器
+                                  </label>
+                              </div>
+                              <div class="radio">
+                                  <label>
+                                      <input type="radio" name="server_type" value="other">
+                                      其它
+                                  </label>
+                              </div>
+                          </div>
+                          <div class="form-group">
+                              <label>实例ID(阿里云服务器)</label>
+                              <input type="text" class="form-control" name="aliid">
+                          </div>
+                          <div class="form-group">
+                              <label>公网IP</label>
+                              <div class="input-group">
+                                  <div class="input-group-addon">
+                                      <i class="fa fa-laptop"></i>
+                                  </div>
+                                  <input type="text" class="form-control" name="ip_outer" data-inputmask="'alias': 'ip'" data-mask="">
+                              </div>
+                          </div>
+                          <div class="form-group">
+                              <label>内网IP</label>
+                              <div class="input-group">
+                                  <div class="input-group-addon">
+                                      <i class="fa fa-cube"></i>
+                                  </div>
+                                  <input type="text" class="form-control" name="ip_inner" data-inputmask="'alias': 'ip'" data-mask="">
+                              </div>
+                          </div>
+                          <div class="form-group">
+                              <div class="radio">
+                                  <label>
+                                      <input type="radio" name="environment" value="production" checked="">
+                                      生产环境
+                                  </label>
+                              </div>
+                              <div class="radio">
+                                  <label>
+                                      <input type="radio" name="environment" value="develop">
+                                      线上测试环境
+                                  </label>
+                              </div>
+                          </div>
+                          <div class="box-footer">
+                              <button type="submit" class="btn btn-primary">添加</button>
+                          </div>
+                      </form>
+                  </div>
+              </div>
+          </div>
+        </div>
+    </div>
+
+    <div role="tabpanel" class="tab-pane" id="server_environment">
+        <div class="row">
+          <div class="col-xs-12">
+              <div class="box box-primary">
+                  <div class="box-header with-border">
+                      <h3 class="box-title">添加服务运行环境</h3>
+                  </div>
+                  <div class="box-body">
+                      <form role="form" action="{{ url_for('build.server_environment_new') }}" method="post">
+                          <div class="form-group">
+                              <label>所属服务器</label>
+                              <select class="form-control" name="server">
+                                  <option></option>
+                                  {% for server in servers%}
+                                  <option>{{ server.name }}</option>
+                                  {% endfor %}
+                              </select>
+                          </div>
+                          <div class="form-group">
+                              <label>服务器部署环境名称</label>
+                              <input type="text" class="form-control" name="name">
+                          </div>
+                          <div class="form-group">
+                              <label>服务器部署环境路径</label>
+                              <input type="text" class="form-control" name="env_path">
+                          </div>
+                          <div class="form-group">
+                              <label>部署前脚本</label>
+                              <textarea class="form-control" rows="3" id="pre_shell" name="pre_shell" placeholder="输入部署前脚本"></textarea>
+                          </div>
+                          <div class="form-group">
+                              <label>部署后脚本</label>
+                              <textarea class="form-control" rows="3" id="pos_shell" name="pos_shell" placeholder="输入部署后脚本"></textarea>
+                          </div>
+                          <div class="box-footer">
+                              <button type="submit" class="btn btn-primary">添加</button>
+                          </div>
+                      </form>
+                  </div>
+              </div>
+          </div>
+        </div>
+    </div>
+  </div>
+
+<!-- Modal1 -->
+<div class="modal fade" id="server_modal" tabindex="-1" role="dialog" aria-labelledby="server_modal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-body">
+          <div class="tab-content">
+              <div class="row">
+                <div class="col-xs-12">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">服务器实例</h3>
+                    </div><!-- /.box-header -->
+                    <div class="box-body">
+                        <table class="table table-bordered" id="env_list_table">
+                            <tr>
+                                <th>运行环境名</th>
+                                <th>上次部署时间</th>
+                                <th>文件</th>
+                                <th>操作</th>
+                            </tr>
+                        </table>
+                    </div><!-- /.box-body -->
+                    <div class="box-footer clearfix">
+                        <ul class="pagination pagination-sm no-margin pull-right">
+                            <li><a href="#">&laquo;</a></li>
+                            <li><a href="#">1</a></li>
+                            <li><a href="#">2</a></li>
+                            <li><a href="#">3</a></li>
+                            <li><a href="#">&raquo;</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal2 -->
+<div class="modal fade" id="running_env_manage" tabindex="-2" role="dialog" aria-labelledby="env_modal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div role="tabpanel" class="tab-pane active">
+              <div class="row">
+                <div class="col-xs-12">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">运行环境管理</h3>
+                    </div>
+                    <div class="box-body">
+                        <form role="form" action="{{ url_for('build.preserve_env_info') }}" method="post">
+                            <input id="hidden_server_env_id" type="hidden" name="hidden_server_env_id"/>
+                            <div class="form-group">
+                                <label>环境名</label>
+                                <input type="text" class="form-control" id="env_name" name="env_name" placeholder="环境名">
+                            </div>
+                            <div class="form-group">
+                                <label>部署时间</label>
+                                <input type="text" class="form-control" id="deploy_time" name="deploy_time" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>部署环境路径</label>
+                                <input type="text" class="form-control" id="file_path" name="file_path">
+                            </div>
+                            <div class="form-group">
+                                <label>部署前脚本</label>
+                                <textarea class="form-control" rows="3" id="model_pre_shell" name="model_pre_shell" placeholder="输入部署前脚本"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>部署后脚本</label>
+                                <textarea class="form-control" rows="3" id="model_pos_shell" name="model_pos_shell" placeholder="输入部署后脚本"></textarea>
+                            </div>
+                            <div class="box-footer">
+                                <button type="submit" class="btn btn-primary">保存</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+         </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block script %}
+<script src="{{ url_for('static', filename='basjs.js') }}"></script>
+<script>
+
+    $(document).ready(function(){
+        before = $("#env_list_table tbody").html();
+        $(".btn-server").on('click', env_list);
+
+    });
+
+    function env_list(){
+        $.get("/build/get_env_list/"+this.text,function(data){
+            var obj = JSON.parse(data['result']);
+            var append = '';
+            for(var i=0;i<obj.result.length;i++){
+                id = obj.result[i].id;
+                name = obj.result[i].name;
+                server_id = obj.result[i].server_id;
+                deploy_time = obj.result[i].deploy_time;
+                file_path = obj.result[i].file_path;
+                pre_shell = obj.result[i].pre_shell;
+                pos_shell = obj.result[i].pos_shell;
+
+                var deploy_time;
+                if(deploy_time!=null){
+                    deploy_status = deploy_time;
+                } else {
+                    deploy_time = '未部署';
+                }
+
+                append = append + "<tr>";
+                append = append + '<input class="hidden_env_id" type="hidden" name="hidden_env_id" value="'+id+'"/>';
+                append = append + '<td><a class="btn btn-link btn-a btn-env" data-toggle="modal" data-target="#running_env_manage">'+name+'</a></td>';
+                append = append + "<td>" + deploy_time + "</td>";
+                append = append + "<td>" + file_path + "</td>";
+                append = append + "<td>";
+                append = append + '<a href="/build/running_env_delete/'+id+'">删除</a>';
+                append = append + "</td></tr>";
+
+            }
+            $("#env_list_table").html(before+append);
+            $(".btn-env").on('click', env_info);
+        });
+    }
+
+    function env_info(){
+        var env_id = $(this).parent().parent().children("input").val();
+        //alert(env_id);
+        var deploy_time;
+        var deploy;
+        $.get("/build/get_env_info/"+env_id,function(data){
+            var obj = JSON.parse(data['result']);
+            $('#env_name').val(obj.result[0].name);
+            //alert(obj.result[0].name+obj.result[0].id);
+            $('#hidden_server_env_id').val(obj.result[0].id);
+            deploy_time = obj.result[0].deploy_time;
+            if(deploy_time === null){
+                deploy = "未部署";
+            } else {
+                deploy = deploy_time;
+            }
+            $('#deploy_time').val(deploy);
+            $('#file_path').val(obj.result[0].file_path);
+            $('#model_pre_shell').val(obj.result[0].pre_shell);
+            $('#model_pos_shell').val(obj.result[0].pos_shell);
+        });
+    }
+
+
+
+</script>
+{% endblock %}

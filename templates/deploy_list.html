@@ -1,0 +1,257 @@
+{% extends "base_layout.html" %}
+
+{% block css %}
+    <link href="{{ url_for('static', filename='basstyle.css') }}" rel="stylesheet" type="text/css"/>
+{% endblock %}
+
+{% block body %}
+
+<!-- Nav tabs -->
+<ul class="nav nav-tabs" role="tablist">
+    <li role="presentation" class="active"><a href="#deploy_list" aria-controls="deploy_list" role="tab" data-toggle="tab">部署列表</a></li>
+    <li role="presentation"><a href="#deploy_new" aria-controls="deploy_new" role="tab" data-toggle="tab">新建</a></li>
+    <li role="presentation"><a href="#deploy_store" aria-controls="deploy_store" role="tab" data-toggle="tab">归档</a></li>
+</ul>
+
+<!-- Tab panes -->
+  <div class="tab-content">
+    <div role="tabpanel" class="tab-pane active" id="deploy_list">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box box-success">
+                    <!--<div class="box-header with-border">
+                        <h3 class="box-title">待审核部署提交列表</h3>
+                    </div>-->
+                    <div class="box-body">
+                        <table class="table table-bordered">
+                        <tr>
+                            <th>提交者</th>
+                            <th>工程名</th>
+                            <th>状态</th>
+                            <th>提交时间</th>
+                            <th>详情</th>
+                            <th>操作</th>
+                        </tr>
+                        {% for deploy in deploys %}
+                            {% if deploy.status <7 %}
+                            <tr>
+                                <input type="hidden" value="{{ deploy.id }}">
+                                <td>{{ deploy.submitter }}</td>
+                                <td>{{ deploy.project_name }}</td>
+                                <td>
+                                {% if deploy.status == 1 %}
+                                    <button class="btn btn-primary btn-review">待审核</button>
+                                {% elif deploy.status == 2 %}
+                                    <button class="btn btn-warning btn-review">被拒绝</button>
+                                {% elif deploy.status == 3 %}
+                                    <button class="btn btn-info btn-review">待构建</button>
+                                {% elif deploy.status == 4 %}
+                                    <button class="btn btn-warning btn-review">构建失败</button>
+                                {% elif deploy.status == 5 %}
+                                    <button class="btn btn-danger btn-review">待部署</button>
+                                {% elif deploy.status == 6 %}
+                                    <button class="btn btn-success btn-review">已部署</button>
+                                {% endif %}
+                                </td>
+                                <td>{{ deploy.time }}</td>
+                                <td><a href="/deploy/deploy_review/DETAILS_DEPLOY/{{ deploy.id }}">查看</a></td>
+                                <td>{% if system_role != 1%}
+                                        {% if deploy.status == 1 %}
+                                            {% if deploy.role == 3 %}
+                                            <button class="btn btn-primary btn-review refuse">拒绝</button>
+                                            <button class="btn btn-primary btn-review approved">批准</button>
+                                            {% endif %}
+                                        {% elif deploy.status == 2 %}
+                                            {% if system_role == 1 or system_role == 2 %}
+                                            <button class="btn btn-danger btn-review delete">删除</button>
+                                            {% endif %}
+                                        {% elif deploy.status == 3 %}
+                                            {% if system_role == 1 or system_role == 2 %}
+                                            <button class="btn btn-info btn-review build">构建</button>
+                                            {% endif %}
+                                        {% elif deploy.status == 4 %}
+                                            {% if system_role == 1 or system_role == 2 %}
+                                            <button class="btn btn-info btn-review build">构建</button>
+                                            {% endif %}
+                                        {% elif deploy.status == 5 %}
+                                            {% if system_role == 1 or system_role == 2 %}
+                                            <button class="btn btn-info btn-review" data-toggle="modal" data-target="#server_modal">部署</button>
+                                            {% endif %}
+                                        {% elif deploy.status == 6 %}
+                                            {% if system_role == 1 or system_role == 2 %}
+                                            <button class="btn btn-success btn-review store">归档</button>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% else %}
+                                        <button class="btn btn-danger btn-review delete">删除</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                        </table>
+                    </div><!-- /.box-body -->
+                    <div class="box-footer clearfix">
+                        <ul class="pagination pagination-sm no-margin pull-right">
+                            <li><a href="#">&laquo;</a></li>
+                            <li><a href="#">1</a></li>
+                            <li><a href="#">2</a></li>
+                            <li><a href="#">3</a></li>
+                            <li><a href="#">&raquo;</a></li>
+                        </ul>
+                    </div>
+                </div><!-- /.box -->
+            </div>
+        </div>
+    </div>
+
+    <div role="tabpanel" class="tab-pane" id="deploy_new">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">新建部署</h3>
+                    </div>
+                    <div class="box-body">
+                        <form role="form" action="{{ url_for('deploy.new_deploy') }}" method="post">
+                            <div class="form-group">
+                                <label>选择工程</label>
+                                <select class="form-control" name="project_name" id="select_project">
+                                    <option></option>
+                                    {% for project in projects%}
+                                    <option>{{ project.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>选择迭代周期</label>
+                                <select class="form-control" name="cycle">
+                                    <option></option>
+                                    <{% for cycle in cycles%}
+                                    <option>{{ cycle.id }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>选择审核者</label>
+                                <select class="form-control" name="reviewer" id="review_develop">
+
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>描述</label>
+                                <textarea class="form-control" rows="3" name="description" placeholder="请输入部署描述"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>本次迭代周期已申请部署次数</label>
+                                <textarea class="form-control" rows="3" name="times_in_cycle" placeholder="输入构建后脚本"></textarea>
+                            </div>
+                            <div class="box-footer">
+                                <button type="submit" class="btn btn-primary">新建</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div role="tabpanel" class="tab-pane" id="deploy_store">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box box-success">
+                    <!--<div class="box-header with-border">
+                        <h3 class="box-title">待审核部署提交列表</h3>
+                    </div>-->
+                    <div class="box-body">
+                        <table class="table table-bordered">
+                        <tr>
+                            <th>#</th>
+                            <th>发起人</th>
+                            <th>工程名</th>
+                            <th>状态</th>
+                            <th>提交时间</th>
+                            <th>详情</th>
+                            <th>操作</th>
+                        </tr>
+                        {% for deploy in deploys %}
+                            {% if deploy.status == 7 %}
+                            <tr>
+                                <input type="hidden" value="{{ deploy.id }}">
+                                <td>{{ deploy.id }}.</td>
+                                <td>{{ deploy.submitter }}</td>
+                                <td>{{ deploy.project_name }}</td>
+                                <td>{{ deploy.status }}</td>
+                                <td>{{ deploy.time }}</td>
+                                <td><a href="/deploy/deploy_review/DETAILS_DEPLOY/{{ deploy.id }}">查看</a></td>
+                                <td>
+                                    <button class="btn btn-danger btn-review delete">删除</button>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                        </table>
+                    </div><!-- /.box-body -->
+                    <div class="box-footer clearfix">
+                        <ul class="pagination pagination-sm no-margin pull-right">
+                            <li><a href="#">&laquo;</a></li>
+                            <li><a href="#">1</a></li>
+                            <li><a href="#">2</a></li>
+                            <li><a href="#">3</a></li>
+                            <li><a href="#">&raquo;</a></li>
+                        </ul>
+                    </div>
+                </div><!-- /.box -->
+            </div>
+        </div>
+    </div>
+
+  </div>
+
+<!-- Modal -->
+<div class="modal fade" id="server_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        <h4 class="modal-title" id="myModalLabel">部署设置</h4>
+      </div>
+      <div class="modal-body">
+        <form role="form" method="post">
+            <div class="form-group">
+                <label>请选择部署位置</label>
+                <select class="form-control" name="project_name">
+                    <option></option>
+                    {% for running_env in running_envs%}
+                    <option>{{ running_env.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+            <button type="button" class="btn btn-primary deploy">部署</button>
+          </div>
+      </div>
+     </div>
+   </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='basjs.js') }}"></script>
+<script>
+
+    $(document).ready(function(){
+       $("form:first").submit(deploy_add);
+       $(".refuse").on('click', refuse);
+       $(".approved").on('click', approved);
+       $(".build").on('click', build);
+       $(".deploy").on('click', deploy);
+       $(".delete").on('click', deploy_delete);
+       $(".store").on('click', store);
+       $("#select_project").on('change', find_manager);
+    });
+
+</script>
+{% endblock %}
