@@ -41,7 +41,7 @@ class JenkinsHelper:
             config = XmlUtil.generate_xml(git_path, git_branch, pre_shell, pos_shell)
             # 参数1写的是项目名称，参数2是xml文档
             print(config)
-            server.create_job(project_name, config.decode('utf-8'))
+            server.create_job(project_name, config)
             return True
         else:
             return None
@@ -91,10 +91,10 @@ class JenkinsHelper:
         return config
 
 if __name__ == '__main__':
-    jenkinsHelper = JenkinsHelper('http://192.168.1.138:8088/', 'szy', 'dt123')
+    jenkinsHelper = JenkinsHelper('http://192.168.1.237:8088/', 'szy', 'dt123')
     # jenkinsHelper.create_project("empty", "git@gitlab.vomoho.com:moho_web/vomoho-fetch.git", "*/develop_fetch")
     # JenkinsHelper.project_built("empty")
-    #jenkinsHelper.get_build_console_output('vomoho-tongji', 1)
+    # jenkinsHelper.get_build_console_output('vomoho-tongji', 1)
     jenkinsHelper.get_build_info('vomoho-tongji', 1)
 
 

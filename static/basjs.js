@@ -128,7 +128,7 @@
     var approved =  function(){
         var deploy_id = $(this).parent().parent().children("input").val();
         $("#modal2_deploy_id").val(deploy_id);
-        $("#reply").val("你已同意部署");
+        $("#reply").val(0);
 
     };
 
@@ -136,7 +136,6 @@
         var modal2_deploy_id = $("#modal2_deploy_id").val();
         var reply = $("#reply").val();
         var comment = $("#comment").val();
-        alert(reply);
         if(reply === '0'){
           $.post("/deploy/deploy_approved", { deploy_id: modal2_deploy_id, comment: comment},
           function(data){
@@ -177,7 +176,8 @@
                 if (obj.result == 200) {
                     window.location.reload();
                 }
-            });
+            }
+        );
     };
 
     var deploy_modal = function(){

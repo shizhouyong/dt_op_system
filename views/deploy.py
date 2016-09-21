@@ -213,13 +213,17 @@ def deploy_launch():
     deploy_pos_shell = env['pos_shell']
 
     # 连接本地服务器
-    sshHelper_local = SSHHelper('192.168.1.138', 22, 'root', 'love0310')
-    sshHelper_local.exec_command(deploy_pre_shell)
+    conn_local = SSHHelper('192.168.1.237', 22, 'root', 'love0310')
+    conn_local.exec_command(deploy_pre_shell)
 
     # 连接项目即将要部署到的服务器
-    sshHelper_outer = SSHHelper(server_outer['ip_outer'], 22, server_outer['username'], server_outer['password'])
-    sshHelper_outer.create_dir(deploy_file_path)
-    sshHelper_outer.exec_command(deploy_pos_shell)
+    conn_outer = SSHHelper(server_outer['ip_outer'], 22, server_outer['username'], server_outer['password'])
+    conn_outer.create_dir(deploy_file_path)
+    conn_outer.exec_command(deploy_pos_shell)
+    print(deploy_file_path)
+    print(server_outer['ip_outer'])
+    print(server_outer['username'])
+    print(server_outer['password'])
 
     response = {"result": 200}
     json_str = json.dumps(response)

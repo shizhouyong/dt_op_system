@@ -51,7 +51,7 @@ class SSHHelper:
         tmp = 1
         dir_path_append = ""
         while tmp < split_len:
-            dir_path_append = dir_path_append.join("/" + dir_path_split[tmp])
+            dir_path_append = dir_path_append + "/" + dir_path_split[tmp]
             message = self.exec_command("cd " + dir_path_append)
 
             if message:
@@ -60,12 +60,12 @@ class SSHHelper:
 
 
 if __name__ == '__main__':
-    conn = SSHHelper('192.168.1.138', 22, 'root', 'love0310')
+    conn = SSHHelper('192.168.1.237', 22, 'root', 'love0310')
     # conn.create_folder('/srv/ftp', 'jar2')
     # conn.create_file('/srv/ftp/war', 'like')
     # conn.copy_file('/srv/ftp/war', 'like', '/srv/ftp/jar', 'like')
     # conn.create_folder('/srv/ftp/war', '2')
-    #conn.delete_file('/srv/ftp', '2')
+    # conn.delete_file('/srv/ftp', '2')
     dir_path_1 = "/usr/local/tomcat7/vomoho/vomoho-tongji"
     conn.create_dir(dir_path_1)
 

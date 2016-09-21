@@ -106,16 +106,16 @@ def login():
     else:
         cur = g.db.execute("SELECT * FROM users WHERE email='" + request.form['email'] + "' AND password='" +
                            request.form['password'] + "'")
-        users = cur.fetchone()
-        if not users:
+        user = cur.fetchone()
+        if not user:
             error = '邮箱或密码错误!'
         else:
             session['logged_in'] = True
-            session['id'] = True
-            session['email'] = users[1]
-            session['username'] = users[2]
-            session['position'] = users[5]
-            session['access'] = users[4]
+            session['id'] = user[0]
+            session['email'] = user[1]
+            session['username'] = user[2]
+            session['position'] = user[5]
+            session['access'] = user[4]
             return redirect(url_for('system.index'))
         return render_template('login.html', error=error)
 
