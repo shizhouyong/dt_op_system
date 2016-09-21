@@ -41,7 +41,7 @@ class JenkinsHelper:
             config = XmlUtil.generate_xml(git_path, git_branch, pre_shell, pos_shell)
             # 参数1写的是项目名称，参数2是xml文档
             print(config)
-            server.create_job(project_name, config)
+            server.create_job(project_name, config.decode('utf-8'))
             return True
         else:
             return None
@@ -55,11 +55,15 @@ class JenkinsHelper:
         server.build_job(project_name)
 
     def check_project_exist(self, project_name):
-        server = self.conn_jenkins_server()
-        name = server.get_job_name(project_name)
-        if name is None:
+        try:
+            server = self.conn_jenkins_server()
+            name = server.get_job_name(project_name)
+            if name is None:
+                return False
+            else:
+                return True
+        finally:
             return False
-        return True
 
     def delete_job(self, name):
         server = self.conn_jenkins_server()
@@ -76,14 +80,21 @@ class JenkinsHelper:
         else:
             return None
 
+    def get_build_info(self, project_name, build_num):
+        server = self.conn_jenkins_server()
+        build_result = server.get_build_info(project_name, build_num)['result']
+        return build_result
+
     @staticmethod
     def get_str_from_xml(file):
         config = open(file, encoding='utf8').read()
         return config
 
 if __name__ == '__main__':
-    jenkinsHelper = JenkinsHelper()
-    jenkinsHelper.create_project("empty", "git@gitlab.vomoho.com:moho_web/vomoho-fetch.git", "*/develop_fetch")
+    jenkinsHelper = JenkinsHelper('http://192.168.1.138:8088/', 'szy', 'dt123')
+    # jenkinsHelper.create_project("empty", "git@gitlab.vomoho.com:moho_web/vomoho-fetch.git", "*/develop_fetch")
     # JenkinsHelper.project_built("empty")
+    #jenkinsHelper.get_build_console_output('vomoho-tongji', 1)
+    jenkinsHelper.get_build_info('vomoho-tongji', 1)
 
 

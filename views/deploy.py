@@ -5,6 +5,8 @@ from utils.config import *
 from utils.dbHelper import DbHelper
 from utils.mailHelper import MailHelper
 from utils.jenkinsHelper import JenkinsHelper
+from utils.sshHelper import SSHHelper
+import time
 
 deploy = Blueprint('deploy', __name__)
 
@@ -42,36 +44,18 @@ def deploy_manage(page=1):
                            system_role=system_role[0])
 
 
-# 部署审核/查看详情/批准/拒绝
-@deploy.route('/deploy_review/<item>/<int:did>', methods=['GET'])
-@deploy.route('/deploy_review/<item>', methods=['GET'])
-@deploy.route('/deploy_review', methods=['POST'])
-def deploy_review(item, did):
+# 部署审核-查看详情
+@deploy.route('/deploy_review/<int:did>', methods=['GET'])
+def deploy_review(did):
     if not session.get('logged_in'):
         abort(401)
-    cur = g.db.execute("select project_pid from deploys where id = " + str(did))
-    project_id = cur.fetchone()
-    if request.method == 'GET':
-        if item == 'DETAILS_DEPLOY':
-            print(did)
-            deploy = DbHelper.get_deploy_by_id(did)
-            return render_template("deploy_details.html",
-                                   service_type=SERVICE_TYPE["DEPLOY_SERVICE"],
-                                   service_name=DEPLOY_SERVICE["DEPLOY_MANEGE"],
-                                   deploy_item=DEPLOY_SERVICE[item],
-                                   item=item,
-                                   deploy=deploy)
-        elif item == 'APPROVAL_DEPLOY':
-            g.db.execute("update deploys set status = 2 where id = " + str(did))
-            g.db.commit()
-            return redirect(url_for("project.submit_deploy", project_id=project_id[0]))
-        elif item == 'REFUSE_DEPLOY':
-            g.db.execute("update deploys set status = 3 where id = " + str(did))
-            g.db.commit()
-            return redirect(url_for("project.submit_deploy", project_id=project_id[0]))
-    else:
-        if not session.get('logged_in'):
-            abort(401)
+    cur = g.db.execute("select a.*, b.username, b.system_role from deploy_reply a,users b where a.user_id = b.id "
+                       "and a.deploy_id = " + str(did))
+    deploy_replys = cur.fetchall()
+    return render_template("deploy_details.html",
+                           service_type=SERVICE_TYPE["DEPLOY_SERVICE"],
+                           service_name=DEPLOY_SERVICE["DETAILS_DEPLOY"],
+                           deploy_replys=deploy_replys)
 
 
 # 部署管理-拒绝
@@ -80,20 +64,28 @@ def deploy_refuse():
     if not session.get('logged_in'):
         abort(401)
     deploy_id = request.form['deploy_id']
+    user_id = DbHelper.getuseridbyname(session.get('username'))
     g.db.execute("update deploys set status = 2 where id = '" + str(deploy_id) + "'")
     g.db.commit()
+    g.db.execute("insert into deploy_reply(time, user_id, deploy_id, reply, comment) values (?, ?, ?, ?, ?)",
+                [time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                 user_id,
+                 deploy_id,
+                 1,
+                 request.form['comment']])
+    g.db.commit()
     deploy = DbHelper.get_deploy_by_id(deploy_id)
+    print()
     response = {"result": 200}
     json_str = json.dumps(response)
-
-    mail_helper = MailHelper(deploy[4] + "你有个构建任务被拒绝" + "\n" +
+    print(deploy[3])
+    mail_helper = MailHelper(deploy[3] + "你有个构建任务被拒绝" + "\n" +
                              "http://192.168.1.101:5000/deploy/deploy_manage?item=ALL_DEPLOY", "构建通知")
-    id = DbHelper.get_id_username(deploy[4])
+    id = DbHelper.get_id_username(deploy[3])
     user = DbHelper.get_users_by_id(id[0])
     mail = user[1]
     print(mail)
     mail_helper.send(mail)
-
     return jsonify(result=json_str)
 
 
@@ -103,7 +95,15 @@ def deploy_approved():
     if not session.get('logged_in'):
         abort(401)
     deploy_id = request.form['deploy_id']
+    user_id = DbHelper.getuseridbyname(session.get('username'))
     g.db.execute("update deploys set status = 3 where id = '" + str(deploy_id) + "'")
+    g.db.commit()
+    g.db.execute("insert into deploy_reply(time, user_id, deploy_id, reply, comment) values (?, ?, ? ,?, ?)",
+                 [time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                  user_id,
+                  deploy_id,
+                  0,
+                  request.form['comment']])
     g.db.commit()
     response = {"result": 200}
     json_str = json.dumps(response)
@@ -127,6 +127,7 @@ def build_jenkins():
     project_name = request.form['project_name']
     project = DbHelper.get_project_by_projectname(project_name)
     name = project[2]
+    user_id = DbHelper.getuseridbyname(session.get('username'))
     gitlab_url = project[3]
     branch = "*/" + project[4]
     pre_shell = project[5]
@@ -135,12 +136,91 @@ def build_jenkins():
     # 获取jenkinsHelper实例对象
     jenkins_helper = JenkinsHelper(g.cf.get("jenkins", "url"), g.cf.get("jenkins", "username"),
                                    g.cf.get("jenkins", "password"))
-    print(jenkins_helper.url)
+
     # 判断jenkins里是否存在该工程,存在直接构建;不存在，先新建再构建
-    if jenkins_helper.check_project_exist(name):
-        jenkins_helper.project_built(name)
-    g.db.execute("update deploys set status = 5 where id = '" + str(deploy_id) + "'")
+    if jenkins_helper.check_project_exist(project_name):
+        jenkins_helper.project_built(project_name)
+    else:
+        return;
+
+    # 获取此工程的总构建数，以此获取该工程此次构建的build_num
+    cur = g.db.execute("SELECT COUNT(*) FROM builds_record WHERE pid ='" + str(project[1]) + "'")
+    build_num = cur.fetchone()[0] + 1
+
+    build_result = None
+    tmp = 0
+    while not build_result:
+        time.sleep(5)
+        build_result = jenkins_helper.get_build_info(project_name, build_num)
+        tmp += 1
+        if tmp == 20:
+            break
+
+    g.db.execute("UPDATE deploys SET status=41 WHERE id = '" + str(deploy_id) + "'")
+
+    if build_result == 'SUCCESS':
+        g.db.execute("INSERT INTO builds_record (pid, time, build_desc, oprator, process, environment, tomcat) VALUES(?,?,?,?,?,?,?)",
+                     [
+                         project[1],
+                         time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                         '测试',
+                         session.get('username'),
+                         '构建成功',
+                         'master',
+                         '1'
+                     ])
+        g.db.execute("UPDATE deploys SET status=5001 WHERE id = '" + str(deploy_id) + "'")
+    else:
+        g.db.execute("INSERT INTO builds_record (pid, time, build_desc, operator, process, environment, tomcat) VALUES(?,?,?,?,?,?,?)",
+                    [
+                        project[1],
+                        time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        '测试',
+                        session.get('username'),
+                        '构建失败',
+                        'master',
+                        '1'
+                    ])
+        g.db.execute("UPDATE deploys SET status = 4 WHERE id = '" + str(deploy_id) + "'")
+
     g.db.commit()
+    g.db.execute("insert into deploy_reply(time, user_id, deploy_id, reply) values (?, ?, ? ,?)",
+                 [time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                  user_id,
+                  deploy_id,
+                  0])
+    g.db.commit()
+    response = {"result": 200}
+    json_str = json.dumps(response)
+    return jsonify(result=json_str)
+
+
+# 部署管理-开始部署
+@deploy.route("/deploy_launch", methods=['POST'])
+def deploy_launch():
+    if not session.get('logged_in'):
+        abort(401)
+
+    deploy_id = request.form['deploy_id']
+    env_name = request.form['env_name']
+
+    deploy = DbHelper.get_deploy_by_id(deploy_id)
+    env = DbHelper.getenv_info_by_name(env_name)
+    server_outer = DbHelper.get_server_by_id(env['server_id'])
+
+    deploy_file_path = env['file_path']
+    deploy_pre_shell = env['pre_shell']
+    deploy_pos_shell = env['pos_shell']
+
+    # 连接本地服务器
+    sshHelper_local = SSHHelper('192.168.1.138', 22, 'root', 'love0310')
+    sshHelper_local.exec_command(deploy_pre_shell)
+
+    # 连接项目即将要部署到的服务器
+    sshHelper_outer = SSHHelper(server_outer['ip_outer'], 22, server_outer['username'], server_outer['password'])
+    sshHelper_outer.create_dir(deploy_file_path)
+    sshHelper_outer.exec_command(deploy_pos_shell)
+
     response = {"result": 200}
     json_str = json.dumps(response)
     return jsonify(result=json_str)
@@ -154,6 +234,8 @@ def deploy_delete():
     deploy_id = request.form['deploy_id']
     g.db.execute("delete from deploys where id = " + str(deploy_id))
     g.db.commit()
+    g.db.execute("delete from deploy_reply where id = " + str(deploy_id))
+    g.db.commit()
     response = {"result": 200}
     json_str = json.dumps(response)
     return jsonify(result=json_str)
@@ -165,7 +247,7 @@ def deploy_store():
     if not session.get('logged_in'):
         abort(401)
     deploy_id = request.form['deploy_id']
-    g.db.execute("update deploys set status = 7 where id = '" + str(deploy_id) + "'")
+    g.db.execute("update deploys set status = 7001 where id = '" + str(deploy_id) + "'")
     g.db.commit()
     response = {"result": 200}
     json_str = json.dumps(response)
@@ -181,6 +263,7 @@ def new_deploy():
     project_id = DbHelper.get_id_project_name(request.form['project_name'])
     cycle_id = request.form['cycle']
     description = request.form['description']
+    user_id = DbHelper.getuseridbyname(session.get('username'))
     g.db.execute('INSERT INTO deploys(submitter,review_develop,project_pid,cycle_id,description) '
                  'values (?, ?, ?, ?, ?)',
                  [session.get('username'),
@@ -188,6 +271,14 @@ def new_deploy():
                   project_id[0],
                   cycle_id,
                   description])
+    g.db.commit()
+    cur = g.db.execute("select id from deploys order by id desc")
+    deploy_id = cur.fetchone()
+    g.db.execute("insert into deploy_reply(time, user_id, deploy_id, reply) values (?, ?, ? ,?)",
+                 [time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                  user_id,
+                  deploy_id[0],
+                  0])
     g.db.commit()
     mail_helper = MailHelper(request.form['reviewer']+"这里有个部署需要你去审核" + "\n" +
                              "http://192.168.1.101:5000/deploy/deploy_manage?item=ALL_DEPLOY", "部署审核通知")
@@ -215,4 +306,5 @@ def select_project():
     json_str = json.dumps(response)
     return jsonify(result=json_str)
 
-
+if __name__ == '__main__':
+    print()

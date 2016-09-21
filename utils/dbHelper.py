@@ -150,7 +150,12 @@ class DbHelper:
 
     @classmethod
     def get_server_id_by_name(cls, name):
-        cur = g.db.execute("SELECT id from servers where name = '" + name + "'")
+        cur = g.db.execute("SELECT id from servers where name = '" + str(name) + "'")
+        return cur.fetchone()
+
+    @classmethod
+    def get_server_by_id(cls, id):
+        cur = g.db.execute("SELECT * from servers WHERE id = '" + str(id) + "'")
         return cur.fetchone()
 
     @classmethod
@@ -161,5 +166,10 @@ class DbHelper:
     @classmethod
     def get_env_info_by_id(cls, env_id):
         cur = g.db.execute("SELECT * from running_env where id = " + str(env_id))
+        return cur.fetchone()
+
+    @classmethod
+    def getenv_info_by_name(cls, env_name):
+        cur = g.db.execute("SELECT * FROM running_env WHERE name = '" + str(env_name) + "'")
         return cur.fetchone()
 

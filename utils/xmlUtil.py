@@ -119,9 +119,6 @@ class XmlUtil:
         # tree = XmlUtil.read_xml("../static/xml/empty.xml")
         # print(jenkins.EMPTY_CONFIG_XML)
         tree = ET.fromstring(jenkins.EMPTY_CONFIG_XML)
-
-
-
         # 2. 属性修改
         # A. 找到父节点
         scm = XmlUtil.find_nodes(tree, "scm")
